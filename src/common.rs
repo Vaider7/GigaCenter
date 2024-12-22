@@ -9,6 +9,9 @@ pub enum Handler {
     DaemonClient,
 }
 
+pub const EXIT_MSG: &str =
+    "Run Gigabyte Linux as root or install systemd service with `gigabyte-linux daemon install`";
+
 impl Handler {
     pub async fn new() -> Result<Self> {
         let daemon_client = DaemonClient::connect().await;
@@ -19,8 +22,6 @@ impl Handler {
         if let Ok(ec) = ec {
             return Ok(Handler::from(ec));
         }
-        bail!(
-            "Run Gigabyte Linux as root or install systemd service with `gigabyte-linux daemon install`"
-        )
+        bail!("{EXIT_MSG}")
     }
 }

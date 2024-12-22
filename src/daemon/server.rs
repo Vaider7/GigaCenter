@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use anyhow::{Context, Result, bail};
 use futures::{SinkExt, StreamExt};
+use log::{debug, error, info};
 use std::{fs, os::unix::fs::PermissionsExt};
 use tokio::{net::UnixListener, sync::Mutex};
 
@@ -22,7 +23,7 @@ pub async fn start_daemon() -> Result<()> {
     let perms = fs::Permissions::from_mode(0o777);
 
     fs::set_permissions(DAEMON_UDS_PATH, perms)?;
-    println!("Daemon ready for incoming connections");
+    info!("Daemon ready for incoming connections");
     loop {
         match listener.accept().await.context("Create IPC listener") {
             Ok((stream, _)) => {
@@ -30,7 +31,7 @@ pub async fn start_daemon() -> Result<()> {
                 let transport = bind_transport_server(stream);
                 _ = tokio::spawn(async {
                     if let Err(err) = handle_incoming(transport, cloned).await {
-                        eprintln!("Error daemon request: {err}");
+                        error!("Error daemon request: {err}");
                     };
                 });
             }
@@ -45,7 +46,7 @@ pub async fn handle_incoming(
 ) -> Result<()> {
     loop {
         let Some(req) = stream.next().await else {
-            println!("Connection finished");
+            info!("Connection finished");
             return Ok(());
         };
         let Ok(req) = req else {
@@ -54,6 +55,7 @@ pub async fn handle_incoming(
         match req {
             DaemonReq::SetFanMode(fan_mode) => {
                 _ = ec.lock().await.write_data(&fan_mode).await?;
+                info!("Fan mode set to {fan_mode}");
                 stream
                     .send(DaemonResp::WriteResult(WriteResult::Done))
                     .await?;
@@ -63,12 +65,14 @@ pub async fn handle_incoming(
                     bail!("Unknown daemon request");
                 }
                 _ = ec.lock().await.write_data(&bat_threshold).await?;
+                info!("Battery threshold set to {}", *bat_threshold);
                 stream
                     .send(DaemonResp::WriteResult(WriteResult::Done))
                     .await?;
             }
             DaemonReq::ReadValues(mut values) => {
                 ec.lock().await.read_data_inner(&mut values).await?;
+                debug!("Read data: {values:#?}");
                 stream.send(DaemonResp::ReadValues(values)).await?;
             }
         }
