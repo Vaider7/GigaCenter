@@ -1,11 +1,11 @@
 use std::fmt::Display;
 
 use crate::{
+    BitState, RWData, Reg,
     daemon::codec::DaemonReq,
     impl_read,
     registers::*,
     traits::{ECHandler, InvokeDaemon, ReadEC, WriteEC},
-    BitState, RWData, Reg,
 };
 use anyhow::Result;
 use clap::ValueEnum;
@@ -14,7 +14,7 @@ use rkyv::{Archive, Deserialize, Serialize};
 #[derive(
     Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Archive, Serialize, Deserialize,
 )]
-/// Different fan speeds. Names as they are presented in Gigabyte Control Center
+/// Different fan speeds. Names as they are presented in official Gigabyte Control Center app
 /// TODO: custom fan speed (fixed and curved)
 pub enum FanMode {
     Normal,

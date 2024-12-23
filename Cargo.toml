@@ -1,5 +1,5 @@
 [package]
-name = "gigabyte-linux"
+name = "gigacenter"
 version = "0.1.0"
 edition = "2024"
 
@@ -17,6 +17,11 @@ log = "0.4.22"
 rkyv = { version = "0.8.9", features = ["bytecheck"] }
 tokio = { version = "1.42.0", features = ["full"] }
 tokio-util = { version = "0.7.13", features = ["codec"] }
+
+[features]
+default = ["self-packed", "gui"]
+self-packed = []
+gui = []
 
 [lints.rust]
 rust_2018_idioms = { level = "forbid", priority = -1 }

@@ -3,7 +3,7 @@ use clap::{Arg, ArgAction, ArgGroup, Command, ValueEnum, value_parser};
 use crate::fan_speed::FanMode;
 
 pub fn cli() -> Command {
-    let mut cli = Command::new("")
+    let mut cli = Command::new("gigacenter")
         .version("0.1.0")
         .propagate_version(true)
         .about("Manage your Gigabyte laptop fan speed and battery threshold on Linux")
@@ -44,6 +44,9 @@ pub fn cli() -> Command {
                 .long("daemon")
                 .value_name("DAEMON_COMMAND")
                 .value_parser(value_parser!(DaemonCommands)),
+        )
+        .after_help(
+            "Currently it's tested for Aorus 16X. For other models, use it at your own risk!",
         );
 
     cli.build();
@@ -54,8 +57,10 @@ pub fn cli() -> Command {
 pub enum DaemonCommands {
     /// Run daemon
     Run,
-    /// Install systemd service needed to use Gigabyte Linux without root permissions
+    /// Install systemd service needed to use gigacenter without root permissions
     Install,
+    /// Remove binary and systemd service
+    Remove,
 }
 
 /// Thanks to https://stackoverflow.com/a/76916424

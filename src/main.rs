@@ -1,4 +1,4 @@
-//! Linux gigabyte is a tool for managing fan speed and battery threshold (current support only Aorus 16X)
+//! Gigacenter is a tool for managing Gigabyte laptops fan speed and battery threshold (current tested Aorus 16X only)
 mod bat;
 mod cli;
 mod common;
@@ -30,11 +30,8 @@ use traits::ECHandler;
 async fn main() -> Result<()> {
     init_from_env(Env::default().filter_or("RUST_LOG", "info"));
     let cli = cli();
-    let this_exe = std::env::current_exe()?;
-    let mut args = std::env::args().peekable();
+    let args = std::env::args().collect::<Vec<_>>();
     let euid = unsafe { geteuid() };
-    _ = args.next_if(|first| *first == this_exe.to_string_lossy());
-
     let matches = cli.get_matches_from(args);
     debug!("Matches ready");
     if let Some(daemon_cmd) = matches.get_one::<DaemonCommands>("daemon") {
@@ -45,7 +42,28 @@ async fn main() -> Result<()> {
             DaemonCommands::Run => {
                 start_daemon().await.context("Start daemon")?;
             }
-            DaemonCommands::Install => todo!(),
+            DaemonCommands::Install => {
+                #[cfg(feature = "self-packed")]
+                crate::daemon::server::install_daemon()?;
+                #[cfg(not(feature = "self-packed"))]
+                {
+                    log::error!(
+                        "Build gigalinux with self-packed feature to use `--daemon install` command"
+                    );
+                    std::process::exit(1);
+                }
+            }
+            DaemonCommands::Remove => {
+                #[cfg(feature = "self-packed")]
+                crate::daemon::server::remove_daemon()?;
+                #[cfg(not(feature = "self-packed"))]
+                {
+                    log::error!(
+                        "Build gigalinux with self-packed feature to use `--daemon install` command"
+                    );
+                    std::process::exit(1);
+                }
+            }
         }
         std::process::exit(0);
     }
@@ -56,7 +74,7 @@ async fn main() -> Result<()> {
             if euid != 0 {
                 rerun_as_root()
             } else {
-                bail!("Failed to run Gigabyte Linux: {err}");
+                bail!("Failed to run gigacenter: {err}");
             }
         }
     };
@@ -80,10 +98,8 @@ async fn main() -> Result<()> {
 
 fn rerun_as_root() -> ! {
     warn!("Command need to be run as root. Try rerun via `pkexec`");
-    let this_exe = std::env::current_exe().unwrap();
     let args = std::env::args();
     let output = Command::new("pkexec")
-        .arg(this_exe)
         .args(args)
         .stderr(Stdio::inherit())
         .stdout(Stdio::inherit())

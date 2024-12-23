@@ -10,7 +10,7 @@ pub enum Handler {
 }
 
 pub const EXIT_MSG: &str =
-    "Run Gigabyte Linux as root or install systemd service with `gigabyte-linux daemon install`";
+    "Run GigaCenter as root or install systemd service with `gigacenter daemon install`";
 
 impl Handler {
     pub async fn new() -> Result<Self> {

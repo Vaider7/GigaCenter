@@ -14,7 +14,10 @@ use crate::{
 
 use super::codec::{DaemonReq, DaemonResp, FramedServer};
 
-pub const DAEMON_UDS_PATH: &str = "/tmp/gigabyte-linux";
+#[cfg(feature = "self-packed")]
+pub const SYSTEMD_SERVICE: &[u8] = include_bytes!("../../assets/gigacenter-daemon.service");
+
+pub const DAEMON_UDS_PATH: &str = "/tmp/gigacenter";
 
 pub async fn start_daemon() -> Result<()> {
     let ec = Arc::new(Mutex::new(EmbeddedController::new().await?));
@@ -77,4 +80,58 @@ pub async fn handle_incoming(
             }
         }
     }
+}
+
+#[cfg(feature = "self-packed")]
+pub fn install_daemon() -> Result<()> {
+    use std::{fs::File, io::Write, process::Command};
+
+    let this_exe = std::env::current_exe()?;
+    if this_exe.to_string_lossy() != "/usr/local/bin/gigacenter" {
+        info!("Installing binary to /usr/local/bin...");
+        let res = Command::new("cp")
+            .arg(this_exe)
+            .arg("/usr/local/bin/gigacenter")
+            .spawn()?
+            .wait()?;
+        if !res.success() {
+            bail!("Failed to install binary to /usr/local/bin")
+        }
+        info!("Binary successfully installed to /usr/local/bin");
+    }
+    info!("Installing systemd service");
+    let mut file = File::create("/etc/systemd/system/gigacenter-daemon.service")?;
+    file.write_all(SYSTEMD_SERVICE)?;
+    let res = Command::new("systemctl")
+        .args(["enable", "gigacenter-daemon.service", "--now"])
+        .spawn()?
+        .wait()?;
+    if !res.success() {
+        bail!("Failed to install binary to /usr/local/bin")
+    }
+    info!("Systemd service successfully installed");
+
+    Ok(())
+}
+
+#[cfg(feature = "self-packed")]
+pub fn remove_daemon() -> Result<()> {
+    use std::process::Command;
+
+    _ = Command::new("rm")
+        .args(["-f", "/usr/local/bin/gigacenter"])
+        .spawn()?
+        .wait()?;
+    _ = Command::new("systemctl")
+        .args(["disable", "gigacenter-daemon.service", "--now"])
+        .spawn()?
+        .wait()?;
+    _ = Command::new("rm")
+        .args(["-f", "/etc/systemd/system/gigacenter-daemon.service"])
+        .spawn()?
+        .wait()?;
+
+    info!("GigaCenter successfully removed");
+
+    Ok(())
 }

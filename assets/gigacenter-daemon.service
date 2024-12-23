@@ -1,0 +1,12 @@
+[Unit]
+Description=GigaCenter daemon
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/gigacenter --daemon run
+Restart=on-failure
+RestartSec=3s
+
+[Install]
+WantedBy=multi-user.target
+
