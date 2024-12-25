@@ -3,18 +3,22 @@ use clap::{Arg, ArgAction, ArgGroup, Command, ValueEnum, value_parser};
 use crate::fan_speed::FanMode;
 
 pub fn cli() -> Command {
+    #[allow(unused_mut, reason = "Mutable access with `gui` feature")]
+    let mut group = ArgGroup::new("exclusive")
+        .args(["show", "fan_mode", "bat_threshold", "daemon"])
+        .multiple(false);
+
+    #[cfg(not(feature = "gui"))]
+    {
+        group = group.required(true);
+    }
+
     let mut cli = Command::new("gigacenter")
         .version("0.1.0")
         .propagate_version(true)
         .about("Manage your Gigabyte laptop fan speed and battery threshold on Linux")
         .styles(get_styles())
-        .group(
-            ArgGroup::new("exclusive")
-                .args(["show", "fan_mode", "bat_threshold", "daemon"])
-                .required(true)
-                .multiple(false),
-        )
-        .arg_required_else_help(true)
+        .group(group)
         .arg(
             Arg::new("show")
                 .short('s')
@@ -46,9 +50,21 @@ pub fn cli() -> Command {
                 .value_parser(value_parser!(DaemonCommands)),
         )
         .after_help(
-            "Currently it's tested for Aorus 16X. For other models, use it at your own risk!",
+            "NOTE: Currently it's tested for Aorus 16X. For other models, use it at your own risk!",
         );
 
+    #[allow(unused_mut, reason = "Mutable access with `gui` feature")]
+    let mut base_after_help =
+        "NOTE: Currently it's tested for Aorus 16X. For other models, use it at your own risk!"
+            .to_owned();
+
+    #[cfg(not(feature = "gui"))]
+    {
+        cli = cli.arg_required_else_help(true);
+        base_after_help
+            .push_str("\nThis is CLI only version. To have GUI, build the app with `gui` feature or download appropriate package on Github page");
+    }
+    cli = cli.after_help(base_after_help);
     cli.build();
     cli
 }

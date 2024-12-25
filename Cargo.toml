@@ -15,13 +15,24 @@ futures = "0.3.31"
 libc = "0.2.167"
 log = "0.4.22"
 rkyv = { version = "0.8.9", features = ["bytecheck"] }
+slint = { version = "1.9.1", optional = true, default-features = false, features = [
+  "compat-1-2",
+  "std",
+  "log",
+  "backend-winit",
+  "renderer-femtovg",
+  "renderer-software",
+] }
 tokio = { version = "1.42.0", features = ["full"] }
 tokio-util = { version = "0.7.13", features = ["codec"] }
+
+[build-dependencies]
+slint-build = "1.9.1"
 
 [features]
 default = ["self-packed", "gui"]
 self-packed = []
-gui = []
+gui = ["dep:slint"]
 
 [lints.rust]
 rust_2018_idioms = { level = "forbid", priority = -1 }

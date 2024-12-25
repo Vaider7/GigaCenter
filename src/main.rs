@@ -1,4 +1,11 @@
 //! Gigacenter is a tool for managing Gigabyte laptops fan speed and battery threshold (current tested Aorus 16X only)
+#![cfg_attr(
+    feature = "gui",
+    expect(
+        forbidden_lint_groups,
+        reason = "Slint generated code contains warnings, so mute it until it fixed"
+    )
+)]
 mod bat;
 mod cli;
 mod common;
@@ -10,6 +17,8 @@ mod monitor;
 mod registers;
 mod temp;
 mod traits;
+#[cfg(feature = "gui")]
+mod ui;
 
 use std::process::{Command, Stdio};
 
@@ -25,6 +34,8 @@ use libc::geteuid;
 use log::{debug, info, warn};
 use monitor::Monitor;
 use traits::ECHandler;
+#[cfg(feature = "gui")]
+use ui::gui;
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<()> {
@@ -34,6 +45,18 @@ async fn main() -> Result<()> {
     let euid = unsafe { geteuid() };
     let matches = cli.get_matches_from(args);
     debug!("Matches ready");
+
+    // matches.args_present() just broken for now, the next code is such a crap
+    #[cfg(feature = "gui")]
+    if matches.index_of("daemon").is_none()
+        && matches.index_of("bat_threshold").is_none()
+        && !matches.get_flag("show")
+        && matches.index_of("fan_mode").is_none()
+    {
+        gui()?;
+        std::process::exit(0);
+    }
+
     if let Some(daemon_cmd) = matches.get_one::<DaemonCommands>("daemon") {
         if euid != 0 {
             rerun_as_root()
@@ -83,11 +106,12 @@ async fn main() -> Result<()> {
         _ = ec.write_data(fan_mode).await?;
         info!("Fan mode set to {fan_mode}");
     }
+
     if let Some(threshold) = matches.get_one::<u8>("bat_threshold") {
         _ = ec.write_data(&BatThreshold::new(*threshold)).await?;
         info!("Battery threshold set to {}", *threshold);
     }
-    if matches.get_one::<bool>("show").is_some_and(|arg| *arg) {
+    if !matches.get_flag("show") {
         let monitor = Monitor::try_new(&mut ec)
             .await
             .context("Creating monitor")?;
