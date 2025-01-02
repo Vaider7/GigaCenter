@@ -37,7 +37,7 @@ use traits::ECHandler;
 #[cfg(feature = "gui")]
 use ui::gui;
 
-#[tokio::main(flavor = "current_thread")]
+#[tokio::main]
 async fn main() -> Result<()> {
     init_from_env(Env::default().filter_or("RUST_LOG", "info"));
     let cli = cli();
@@ -53,7 +53,7 @@ async fn main() -> Result<()> {
         && !matches.get_flag("show")
         && matches.index_of("fan_mode").is_none()
     {
-        gui()?;
+        gui().await?;
         std::process::exit(0);
     }
 
@@ -111,12 +111,13 @@ async fn main() -> Result<()> {
         _ = ec.write_data(&BatThreshold::new(*threshold)).await?;
         info!("Battery threshold set to {}", *threshold);
     }
-    if !matches.get_flag("show") {
+    if matches.get_flag("show") {
         let monitor = Monitor::try_new(&mut ec)
             .await
             .context("Creating monitor")?;
         println!("{}", monitor);
     }
+    info!("Done!");
     Ok(())
 }
 
