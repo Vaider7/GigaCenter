@@ -15,7 +15,7 @@ jobs:
     - name: Create artifact dir
       run: mkdir artifacts && chmod 777 artifacts
     - name: Build binary with docker
-      run: docker run -v $PWD/artifacts:/volume --rm -t gigacenter-build:latest cargo build --release
+      run: docker run -v $PWD/artifacts:/volume -t gigacenter-build:latest
     - name: Upload binary
       uses: actions/upload-artifact@v4
       with:
