@@ -1,0 +1,23 @@
+name: Build
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build image
+      run: docker build -f Dockerfile -t gigacenter-build
+    - name: Create artifact dir
+      run: mkdir artifacts && chmod 777 artifacts
+    - name: Build binary with docker
+      run: docker run -v $PWD/artifacts:/volume --rm -t gigacenter-build:latest cargo build --release
+    - name: Upload binary
+      uses: actions/upload-artifact@v4
+      with:
+        name: gigacenter
+        path: artifacts/gigacenter
