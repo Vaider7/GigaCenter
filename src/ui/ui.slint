@@ -1,4 +1,4 @@
-import { CheckBox, GroupBox, VerticalBox, HorizontalBox, SpinBox, TextEdit } from "std-widgets.slint";
+import { CheckBox, GroupBox, VerticalBox, HorizontalBox, SpinBox, TextEdit, Button } from "std-widgets.slint";
 import "./assets/fonts/JetBrainsMono-Regular.ttf";
 import "./assets/fonts/JetBrainsMono-Bold.ttf";
 import "./assets/fonts/JetBrainsMono-LightItalic.ttf";
@@ -61,32 +61,141 @@ component Header inherits Text {
     font-family: "JetBrains Mono";
 }
 
-component BatThreshold {
-    callback key-pressed();
-    HorizontalLayout {
-        alignment: space-between;
-        BaseText {
-            color: Palette.subtext0;
-            text: "Current value:";
-            horizontal-stretch: 0;
-        }
-        text := TextInput {
-            width: 32px;
-            horizontal-stretch: 1.0;
-            font-size: 16px;
-            text: "0";
-            horizontal-alignment: center;
-            input-type: number;
-            key-pressed(event) => {
-                if event.text.to-float() > 100 {
-                    text.text = 100;
-                    return EventResult.accept;
+component BaseButton {
+    in property <string> text;
+    in property <bool> disabled: false;
+
+    Rectangle {
+        border-radius: 8px;
+        border-color: Palette.peach;
+        background: Palette.peach;
+        states [
+            disabled when disabled: {
+                opacity: 0.4;
+            }
+            hover when area.has-hover: {
+                background: Palette.peach.darker(0.08);
+                in {
+                    animate background { duration: 200ms; easing: ease-out; }
                 }
-                // if event.text.to-float() < 60 {
-                //     text.text = 60;
-                //     return EventResult.accept;
-                // }
-                return EventResult.reject;
+                out {
+                    animate background { duration: 200ms; easing: ease-out; }
+                }
+            }
+        ]
+        VerticalLayout {
+            alignment: center;
+            padding-top: 4px;
+            padding-bottom: 4px;
+            HorizontalLayout {
+                alignment: center;
+                padding-left: 8px;
+                padding-right: 8px;
+                Text {
+                    text: root.text;
+                    font-size: 16px;
+                    color: white;
+                }
+                
+            }
+        }
+        area := TouchArea {
+            width: parent.width;
+            height: parent.height;
+            mouse-cursor: pointer;
+            states [
+                disabled when disabled: {
+                    mouse-cursor: not-allowed;
+                }
+            ]
+        }
+    }
+}
+
+export global BatThresholdValueHandler {
+    callback key-pressed(string, KeyEvent) -> bool;
+}
+
+component BatThreshold {
+    in-out property <string> threshold_val <=> bat_threshold_val.text;
+    VerticalLayout {
+        spacing: 8px;
+        HorizontalLayout {
+            alignment: space-between;
+            BaseText {
+                color: Palette.subtext0;
+                text: "Current value:";
+                horizontal-stretch: 0;
+            }
+
+            VerticalLayout {
+                padding: 0;
+                spacing: 2px;
+                alignment: center;
+                bat_threshold_val := TextInput {
+                    width: apply_button.width;
+                    horizontal-stretch: 1.0;
+                    font-size: 16px;
+                    horizontal-alignment: center;
+                    input-type: number;
+                    single-line: true;
+                    key-pressed(event) => {
+                        if event.text == Key.Backspace {
+                            return EventResult.reject;
+                        }
+                        if BatThresholdValueHandler.key-pressed(threshold_val, event) {
+                            return EventResult.reject;
+                        }
+                        EventResult.accept
+                    }
+                }
+
+                VerticalLayout {
+                    spacing: -1px;
+                    Rectangle {
+                        border-width: 1px;
+                        width: bat_threshold_val.width;
+                        height: 1px;
+                        background: Palette.subtext0;
+                    }
+
+                    HorizontalLayout {
+                        alignment: center;
+                        Rectangle {
+                            border-width: 1px;
+                            width: 0;
+                            height: 1px;
+                            background: Palette.peach;
+                            opacity: 1.0;
+                            states [
+                                focused when bat_threshold_val.has-focus: {
+                                    width: bat_threshold_val.width;
+                                    opacity: 1.0;
+                                    in {
+                                        animate width {
+                                            duration: 800ms;
+                                            easing: ease-out-quart;
+                                        }
+                                    }
+                                    out {
+                                        animate opacity {
+                                            duration: 150ms;
+                                            easing: ease-out;
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        }
+
+        HorizontalLayout {
+            alignment: end;
+            apply_button := BaseButton {
+                text: "Apply";
+                disabled: true;
             }
         }
     }
@@ -119,10 +228,16 @@ component RadioButton {
                     uncheked-hover when checked: {
                         border-color: Palette.text;
                         out {
-                            animate border-color { duration: 100ms; }
+                            animate border-color {
+                                duration: 100ms;
+                                easing: ease-out;
+                            }
                         }
                         in {
-                            animate border-color { duration: 100ms; }
+                            animate border-color {
+                                duration: 100ms;
+                                easing: ease-out;
+                            }
                         }
                     }
                 ]
@@ -135,28 +250,46 @@ component RadioButton {
                         uncheked-hover when checked: {
                             opacity: 1.0;
                             out {
-                                animate opacity { duration: 100ms; }
+                                animate opacity {
+                                    duration: 100ms;
+                                    easing: ease-out;
+                                }
                             }
                             in {
-                                animate opacity { duration: 100ms; }
+                                animate opacity {
+                                    duration: 100ms;
+                                    easing: ease-out;
+                                }
                             }
                         }
                         uncheked-hover when area.has-hover: {
                             opacity: 0.5;
                             out {
-                                animate opacity { duration: 100ms; }
+                                animate opacity {
+                                    duration: 100ms;
+                                    easing: ease-out;
+                                }
                             }
                             in {
-                                animate opacity { duration: 100ms; }
+                                animate opacity {
+                                    duration: 100ms;
+                                    easing: ease-out;
+                                }
                             }
                         }
                         unchecked when !root.checked && !area.has-hover: {
                             opacity: 0.0;
                             out {
-                                animate opacity { duration: 100ms; }
+                                animate opacity {
+                                    duration: 100ms;
+                                    easing: ease-out;
+                                }
                             }
                             in {
-                                animate opacity { duration: 100ms; }
+                                animate opacity {
+                                    duration: 100ms;
+                                    easing: ease-out;
+                                }
                             }
                         }
                     ]
@@ -172,10 +305,16 @@ component RadioButton {
                 checked when checked: {
                     color: Palette.text;
                     out {
-                        animate color { duration: 100ms; }
+                        animate color {
+                            duration: 100ms;
+                            easing: ease-out;
+                        }
                     }
                     in {
-                        animate color { duration: 100ms; }
+                        animate color {
+                            duration: 100ms;
+                            easing: ease-out;
+                        }
                     }
                 }
             ]
@@ -269,7 +408,8 @@ export component App inherits Window {
             Header {
                 text: "Battery threshold";
             }
-            BatThreshold {}
+
+            BatThreshold { }
         }
         HorizontalBox {
             vertical-stretch: 0.0;
@@ -292,20 +432,32 @@ export component App inherits Window {
                             colorize: Palette.peach;
                             opacity: 1;
                             out {
-                                animate colorize, opacity { duration: 100ms; }
+                                animate colorize, opacity {
+                                    duration: 100ms;
+                                    easing: ease-out;
+                                }
                             }
                             in {
-                                animate colorize, opacity { duration: 100ms; }
+                                animate colorize, opacity {
+                                    duration: 100ms;
+                                    easing: ease-out;
+                                }
                             }
                         }
                         hovered when area.has-hover: {
                             colorize: Palette.peach;
                             opacity: 0.5;
                             out {
-                                animate colorize, opacity { duration: 100ms; }
+                                animate colorize, opacity {
+                                    duration: 100ms;
+                                    easing: ease-out;
+                                }
                             }
                             in {
-                                animate colorize, opacity { duration: 100ms; }
+                                animate colorize, opacity {
+                                    duration: 100ms;
+                                    easing: ease-out;
+                                }
                             }
                         }
                     ]
@@ -326,20 +478,32 @@ export component App inherits Window {
                             background: Palette.peach;
                             opacity: 1;
                             out {
-                                animate background, opacity { duration: 100ms; }
+                                animate background, opacity {
+                                    duration: 100ms;
+                                    easing: ease-out;
+                                }
                             }
                             in {
-                                animate background, opacity { duration: 100ms; }
+                                animate background, opacity {
+                                    duration: 100ms;
+                                    easing: ease-out;
+                                }
                             }
                         }
                         hovered when area.has-hover: {
                             background: Palette.peach;
                             opacity: 0.5;
                             out {
-                                animate background, opacity { duration: 100ms; }
+                                animate background, opacity {
+                                    duration: 100ms;
+                                    easing: ease-out;
+                                }
                             }
                             in {
-                                animate background, opacity { duration: 100ms; }
+                                animate background, opacity {
+                                    duration: 100ms;
+                                    easing: ease-out;
+                                }
                             }
                         }
                     ]
@@ -361,10 +525,16 @@ export component App inherits Window {
                             background: Palette.peach;
                             opacity: 1;
                             out {
-                                animate background, opacity { duration: 100ms; }
+                                animate background, opacity {
+                                    duration: 100ms;
+                                    easing: ease-out;
+                                }
                             }
                             in {
-                                animate background, opacity { duration: 100ms; }
+                                animate background, opacity {
+                                    duration: 100ms;
+                                    easing: ease-out;
+                                }
                             }
                         }
                     ]

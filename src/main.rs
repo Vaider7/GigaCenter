@@ -46,7 +46,8 @@ async fn main() -> Result<()> {
     let matches = cli.get_matches_from(args);
     debug!("Matches ready");
 
-    // matches.args_present() just broken for now, the next code is such a crap
+    // matches.args_present() just broken for now, so the next code is such a crap
+    // https://github.com/clap-rs/clap/issues/5860
     #[cfg(feature = "gui")]
     if matches.index_of("daemon").is_none()
         && matches.index_of("bat_threshold").is_none()

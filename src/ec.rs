@@ -215,7 +215,7 @@ impl ECHandler for EmbeddedController {
                 if duration as u16 > WRITE_TIMEOUT_MS {
                     Duration::from_millis(0)
                 } else {
-                    Duration::from_millis(WRITE_TIMEOUT_MS as u64 - duration)
+                    Duration::from_millis((WRITE_TIMEOUT_MS as u64).saturating_sub(duration))
                 }
             }
             Err(err) => {

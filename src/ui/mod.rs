@@ -31,6 +31,16 @@ pub async fn gui() -> Result<()> {
         #[allow(unreachable_code)]
         Ok::<_, anyhow::Error>(())
     });
-
+    app.global::<BatThresholdValueHandler<'_>>()
+        .on_key_pressed(move |mut prev, key| {
+            prev.push_str(&key.text);
+            let Ok(new_val) = prev.parse::<i32>() else {
+                return false;
+            };
+            if new_val > 100 {
+                return false;
+            }
+            true
+        });
     Ok(app.run()?)
 }
