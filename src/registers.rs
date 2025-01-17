@@ -20,4 +20,5 @@ pub const CPU_TEMP: Reg = 0x60;
 pub const GPU_TEMP: Reg = 0x61;
 
 pub const BAT_THRESHOLD_CUSTOM_MODE: (Reg, BitPos) = (0x0F, BitPos::new(2));
+pub const BAT_THRESHOLD_TOGGLE_CUSTOM: (Reg, BitPos) = (0xC6, BitPos::new(0));
 pub const CURRENT_BAT_THRESHOLD: Reg = 0xA9;

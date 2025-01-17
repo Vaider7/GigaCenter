@@ -1,7 +1,24 @@
-import { CheckBox, GroupBox, VerticalBox, HorizontalBox, SpinBox, TextEdit, Button } from "std-widgets.slint";
+import { CheckBox, GroupBox, VerticalBox, HorizontalBox, SpinBox, TextEdit, Button, Spinner } from "std-widgets.slint";
 import "./assets/fonts/JetBrainsMono-Regular.ttf";
 import "./assets/fonts/JetBrainsMono-Bold.ttf";
 import "./assets/fonts/JetBrainsMono-LightItalic.ttf";
+
+enum FanMode {
+    Normal,
+    Eco,
+    Power,
+    Turbo,
+    Unsupported,
+}
+
+struct Monitor {
+    fan_mode: FanMode,
+    cpu_fan_speed: int,
+    gpu_fan_speed: int,
+    cpu_temp: int,
+    gpu_temp: int,
+    bat_threshold: int,
+}
 
 global Palette {
     out property <brush> rosewater: #f4dbd6;
@@ -30,6 +47,16 @@ global Palette {
     out property <brush> base: #24273a;
     out property <brush> mantle: #1e2030;
     out property <brush> crust: #181926;
+}
+
+export global State {
+    in property <bool> show-loader;
+    in-out property <string> threshold-value;
+    in property <bool> blocked;
+    callback threshold-change(string, KeyEvent);
+    callback fan-mode-change(FanMode);
+    callback do-backspace(string) -> string; // Ugly hack cause slint can't manipulate strings for now
+    callback set-threshold(string);
 }
 
 component BaseText inherits Text {
@@ -64,6 +91,7 @@ component Header inherits Text {
 component BaseButton {
     in property <string> text;
     in property <bool> disabled: false;
+    callback clicked();
 
     Rectangle {
         border-radius: 8px;
@@ -76,10 +104,16 @@ component BaseButton {
             hover when area.has-hover: {
                 background: Palette.peach.darker(0.08);
                 in {
-                    animate background { duration: 200ms; easing: ease-out; }
+                    animate background {
+                        duration: 200ms;
+                        easing: ease-out;
+                    }
                 }
                 out {
-                    animate background { duration: 200ms; easing: ease-out; }
+                    animate background {
+                        duration: 200ms;
+                        easing: ease-out;
+                    }
                 }
             }
         ]
@@ -96,9 +130,9 @@ component BaseButton {
                     font-size: 16px;
                     color: white;
                 }
-                
             }
         }
+
         area := TouchArea {
             width: parent.width;
             height: parent.height;
@@ -108,16 +142,17 @@ component BaseButton {
                     mouse-cursor: not-allowed;
                 }
             ]
+            clicked => {
+                clicked()
+            }
         }
     }
 }
 
-export global BatThresholdValueHandler {
-    callback key-pressed(string, KeyEvent) -> bool;
-}
-
 component BatThreshold {
-    in-out property <string> threshold_val <=> bat_threshold_val.text;
+    out property <string> threshold_val <=> State.threshold-value;
+    in-out property <int> bat_threshold_monitor;
+
     VerticalLayout {
         spacing: 8px;
         HorizontalLayout {
@@ -136,16 +171,24 @@ component BatThreshold {
                     width: apply_button.width;
                     horizontal-stretch: 1.0;
                     font-size: 16px;
+                    text: threshold_val;
                     horizontal-alignment: center;
                     input-type: number;
                     single-line: true;
+                    read-only: false;
                     key-pressed(event) => {
+                        if event.text == Key.Return {
+                            if State.blocked {
+                                return EventResult.accept;
+                            }
+                            State.set-threshold(threshold_val);
+                            bat_threshold_monitor = threshold_val.to-float();
+                            return EventResult.accept;
+                        }
                         if event.text == Key.Backspace {
-                            return EventResult.reject;
+                            threshold_val = State.do-backspace(threshold_val);
                         }
-                        if BatThresholdValueHandler.key-pressed(threshold_val, event) {
-                            return EventResult.reject;
-                        }
+                        State.threshold-change(threshold_val, event);
                         EventResult.accept
                     }
                 }
@@ -173,7 +216,7 @@ component BatThreshold {
                                     opacity: 1.0;
                                     in {
                                         animate width {
-                                            duration: 800ms;
+                                            duration: 600ms;
                                             easing: ease-out-quart;
                                         }
                                     }
@@ -195,7 +238,14 @@ component BatThreshold {
             alignment: end;
             apply_button := BaseButton {
                 text: "Apply";
-                disabled: true;
+                disabled: threshold_val == bat_threshold_monitor;
+                clicked => {
+                    if State.blocked {
+                        return;
+                    }
+                    State.set-threshold(threshold_val);
+                    bat_threshold_monitor = threshold_val.to-float();
+                }
             }
         }
     }
@@ -322,13 +372,20 @@ component RadioButton {
     }
 }
 
-struct Monitor {
-    fan_mode: int,
-    cpu_fan_speed: int,
-    gpu_fan_speed: int,
-    cpu_temp: int,
-    gpu_temp: int,
-    bat_threshold: int,
+component Loader {
+    Rectangle {
+        width: 44px;
+        height: 44px;
+        border-radius: 9999px;
+        background: @linear-gradient(animation-tick() / 1.25s * 360deg, Palette.peach.with-alpha(0.2) 33%, Palette.peach 100%);
+    }
+
+    Rectangle {
+        width: 40px;
+        height: 40px;
+        border-radius: 9999px;
+        background: Palette.base;
+    }
 }
 
 export component App inherits Window {
@@ -338,7 +395,6 @@ export component App inherits Window {
     width: 25rem;
     height: 25rem;
     title: "GigaLinux";
-    in-out property <int> fan_mode;
     in-out property <Monitor> monitor;
     property <[string]> list-fan-modes: ["Normal", "Eco", "Power", "Turbo"];
     property <[image]> icons: [
@@ -348,6 +404,20 @@ export component App inherits Window {
         @image-url("./assets/svg/gear.svg")
     ];
     property <int> tab_state;
+    function fan-mode-to-string(fan_mode: FanMode) -> string {
+        if fan_mode == FanMode.Normal {
+            "Normal"
+        } else if fan-mode == FanMode.Eco {
+            "Eco"
+        } else if fan_mode == FanMode.Power {
+            "Power"
+        } else if fan_mode == FanMode.Turbo {
+            "Turbo"
+        } else {
+            "Unsupported"
+        }
+    }
+
     VerticalBox {
         padding-top: 0;
         if tab_state == 0: info := VerticalBox {
@@ -359,7 +429,7 @@ export component App inherits Window {
 
             PropValue {
                 prop: "Fan mode";
-                value: monitor.fan-mode;
+                value: fan-mode-to-string(monitor.fan-mode);
             }
 
             PropValue {
@@ -394,22 +464,31 @@ export component App inherits Window {
                 text: "Fan mode";
             }
 
-            for i in 4: RadioButton {
-                checked: root.fan_mode == i ? true : false;
+            for i in [FanMode.Normal, FanMode.Eco, FanMode.Power, FanMode.Turbo]: RadioButton {
+                checked: monitor.fan-mode == i ? true : false;
                 clicked => {
-                    root.fan_mode = i
+                    if monitor.fan-mode == i {
+                        return;
+                    }
+                    if State.blocked {
+                        return;
+                    }
+                    monitor.fan-mode = i;
+                    State.fan-mode-change(i)
                 }
-                name: root.list-fan-modes[i];
+                name: fan-mode-to-string(i);
             }
         }
-        if tab_state == 2: bat_threshold := VerticalBox {
+        if tab_state == 2: VerticalBox {
             vertical-stretch: 1.0;
             alignment: start;
             Header {
                 text: "Battery threshold";
             }
 
-            BatThreshold { }
+            bat_threshold := BatThreshold {
+                bat_threshold_monitor: monitor.bat-threshold;
+            }
         }
         HorizontalBox {
             vertical-stretch: 0.0;
@@ -541,5 +620,17 @@ export component App inherits Window {
                 }
             }
         }
+    }
+
+    if State.show-loader: Rectangle {
+        x: 0;
+        y: 0;
+        width: root.width;
+        height: root.height;
+        background: Palette.base;
+        opacity: 0.4;
+        TouchArea { }
+
+        Loader { }
     }
 }

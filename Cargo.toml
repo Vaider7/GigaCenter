@@ -15,7 +15,7 @@ futures = "0.3.31"
 libc = "0.2.167"
 log = "0.4.22"
 rkyv = { version = "0.8.9", features = ["bytecheck"] }
-slint = { version = "1.9.1", optional = true, default-features = false, features = [
+slint = { version = "1.9.2", optional = true, default-features = false, features = [
   "compat-1-2",
   "std",
   "log",

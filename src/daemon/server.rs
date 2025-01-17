@@ -1,15 +1,15 @@
 use std::sync::Arc;
 
-use anyhow::{Context, Result, bail};
+use anyhow::{bail, Context, Result};
 use futures::{SinkExt, StreamExt};
 use log::{debug, error, info};
 use std::{fs, os::unix::fs::PermissionsExt};
 use tokio::{net::UnixListener, sync::Mutex};
 
 use crate::{
-    EmbeddedController,
     daemon::codec::bind_transport_server,
     traits::{ECHandler, WriteResult},
+    EmbeddedController,
 };
 
 use super::codec::{DaemonReq, DaemonResp, FramedServer};
@@ -85,6 +85,11 @@ pub async fn handle_incoming(
 #[cfg(feature = "self-packed")]
 pub fn install_daemon() -> Result<()> {
     use std::{fs::File, io::Write, process::Command};
+
+    _ = Command::new("systemctl")
+        .args(["stop", "gigacenter-daemon.service"])
+        .spawn()?
+        .wait();
 
     let this_exe = std::env::current_exe()?;
     if this_exe.to_string_lossy() != "/usr/local/bin/gigacenter" {

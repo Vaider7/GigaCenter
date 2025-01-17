@@ -11,7 +11,7 @@ use tokio::{
     io::{AsyncReadExt, AsyncSeekExt as _, AsyncWriteExt},
 };
 
-use anyhow::{Context, Error, Result, bail};
+use anyhow::{bail, Context, Error, Result};
 use libc::geteuid;
 
 use crate::{
@@ -76,7 +76,7 @@ pub enum RWData {
     },
 }
 
-pub const WRITE_TIMEOUT_MS: u16 = 2000;
+pub const WRITE_TIMEOUT_MS: u16 = 2500;
 const WRITE_TIMEOUT_PATH: &str = "/tmp/last-write-ec";
 
 /// Main struct to read/write data to/from EC

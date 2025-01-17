@@ -2,7 +2,9 @@
 /// Simple macro to create readers types with one value
 macro_rules! impl_read {
     (U8, $name: ident, $rwdata:expr) => {
-        #[derive(Debug, Copy, Clone, rkyv::Archive, rkyv::Serialize, rkyv::Deserialize)]
+        #[derive(
+            Debug, Copy, Clone, rkyv::Archive, rkyv::Serialize, rkyv::Deserialize, Eq, PartialEq,
+        )]
         pub struct $name(u8);
 
         $crate::deref!($name(u8));
@@ -26,7 +28,9 @@ macro_rules! impl_read {
         }
     };
     (U16, $name: ident, $rwdata:expr) => {
-        #[derive(Debug, Copy, Clone, rkyv::Archive, rkyv::Serialize, rkyv::Deserialize)]
+        #[derive(
+            Debug, Copy, Clone, rkyv::Archive, rkyv::Serialize, rkyv::Deserialize, Eq, PartialEq,
+        )]
         pub struct $name(u16);
 
         $crate::deref!($name(u16));

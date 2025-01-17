@@ -1,11 +1,11 @@
 use std::fmt::Display;
 
 use crate::{
-    BitState, RWData, Reg,
     daemon::codec::DaemonReq,
     impl_read,
     registers::*,
     traits::{ECHandler, InvokeDaemon, ReadEC, WriteEC},
+    BitState, RWData, Reg,
 };
 use anyhow::Result;
 use clap::ValueEnum;
@@ -21,6 +21,7 @@ pub enum FanMode {
     Eco,
     Power,
     Turbo,
+    Unsupported,
 }
 
 impl Display for FanMode {
@@ -30,6 +31,7 @@ impl Display for FanMode {
             FanMode::Eco => "Eco",
             FanMode::Power => "Power",
             FanMode::Turbo => "Turbo",
+            FanMode::Unsupported => "Unsupported",
         };
         write!(f, "{to_write}")
     }
@@ -137,6 +139,7 @@ impl WriteEC for FanMode {
                     value: FIXED_SPEED_MAX_VALUE,
                 },
             ],
+            FanMode::Unsupported => vec![],
         }
     }
 }
@@ -198,8 +201,14 @@ impl FanMode {
             Ok(Self::Power)
         } else if is_mode(CUSTOM_MODE.0) && is_mode(FIXED_MODE.0) {
             Ok(Self::Turbo)
-        } else {
+        } else if !is_mode(ECO_MODE.0)
+            && !is_mode(POWER_MODE.0)
+            && !is_mode(CUSTOM_MODE.0)
+            && !is_mode(FIXED_MODE.0)
+        {
             Ok(Self::Normal)
+        } else {
+            Ok(Self::Unsupported)
         }
     }
 }
