@@ -53,6 +53,8 @@ export global State {
     in property <bool> show-loader;
     in-out property <string> threshold-value;
     in property <bool> blocked;
+    in-out property <brush> main-color: Palette.peach;
+
     callback threshold-change(string, KeyEvent);
     callback fan-mode-change(FanMode);
     callback do-backspace(string) -> string; // Ugly hack cause slint can't manipulate strings for now
@@ -81,7 +83,7 @@ component PropValue {
 }
 
 component Header inherits Text {
-    color: Palette.peach;
+    color: State.main-color;
     font-size: 20px;
     font-italic: true;
     font-weight: 800;
@@ -95,14 +97,14 @@ component BaseButton {
 
     Rectangle {
         border-radius: 8px;
-        border-color: Palette.peach;
-        background: Palette.peach;
+        border-color: State.main-color;
+        background: State.main-color;
         states [
             disabled when disabled: {
                 opacity: 0.4;
             }
             hover when area.has-hover: {
-                background: Palette.peach.darker(0.08);
+                background: State.main-color.darker(0.08);
                 in {
                     animate background {
                         duration: 200ms;
@@ -208,7 +210,7 @@ component BatThreshold {
                             border-width: 1px;
                             width: 0;
                             height: 1px;
-                            background: Palette.peach;
+                            background: State.main-color;
                             opacity: 1.0;
                             states [
                                 focused when bat_threshold_val.has-focus: {
@@ -245,6 +247,137 @@ component BatThreshold {
                     }
                     State.set-threshold(threshold_val);
                     bat_threshold_monitor = threshold_val.to-float();
+                }
+            }
+        }
+    }
+}
+
+component ColorPicker {
+    in property <brush> color;
+    Rectangle {
+        border-radius: 9999px;
+        background: color;
+        width: 16px;
+        height: 16px;
+
+        VerticalLayout {
+            alignment: center;
+            HorizontalLayout {
+                alignment: center;
+                Rectangle {
+                    opacity: 0;
+                    border-radius: 9999px;
+                    background: color.darker(0.4);
+                    width: 6px;
+                    height: 6px;
+                    states [
+                        picked when color == State.main-color: {
+                            opacity: 1.0;
+                        }
+                    ]
+                }
+            }
+        }
+
+        TouchArea {
+            mouse-cursor: pointer;
+            clicked => {
+                State.main-color = color;
+            }
+        }
+    }
+}
+
+component Settings {
+    HorizontalLayout {
+        alignment: space-between;
+        BaseText {
+            vertical-alignment: top;
+            color: Palette.subtext0;
+            text: "Application color";
+        }
+
+        HorizontalLayout {
+            spacing: 16px;
+            ColorPicker {
+                color: State.main-color;
+            }
+
+            Button {
+                width: 10px;
+                height: 10px;
+                clicked => {
+                    popup.show()
+                }
+            }
+        }
+
+        popup := PopupWindow {
+            close-policy: close-on-click-outside;
+            x: 130px;
+            y: 25px;
+            width: 140px;
+            height: 60px;
+            Rectangle {
+                border-radius: 8px;
+                border-width: 1px;
+                border-color: Palette.mantle;
+                background: Palette.mantle;
+                VerticalLayout {
+                    alignment: center;
+                    spacing: 20px;
+
+                    HorizontalLayout {
+                        padding: 0;
+                        spacing: 20px;
+                        alignment: center;
+                        ColorPicker {
+                            color: Palette.peach;
+                        }
+
+                        ColorPicker {
+                            color: Palette.sapphire;
+                        }
+
+                        ColorPicker {
+                            color: Palette.rosewater;
+                        }
+
+                        ColorPicker {
+                            color: Palette.flamingo;
+                        }
+
+                        ColorPicker {
+                            color: Palette.pink;
+                        }
+                    }
+
+                    HorizontalLayout {
+                        padding: 0;
+                        spacing: 20px;
+                        alignment: center;
+
+                        ColorPicker {
+                            color: Palette.blue;
+                        }
+
+                        ColorPicker {
+                            color: Palette.green;
+                        }
+
+                        ColorPicker {
+                            color: Palette.lavender;
+                        }
+
+                        ColorPicker {
+                            color: Palette.mauve;
+                        }
+
+                        ColorPicker {
+                            color: Palette.maroon;
+                        }
+                    }
                 }
             }
         }
@@ -292,7 +425,7 @@ component RadioButton {
                     }
                 ]
                 inner := Rectangle {
-                    background: Palette.peach;
+                    background: State.main-color;
                     width: 10px;
                     height: 10px;
                     border-radius: 100px;
@@ -377,7 +510,7 @@ component Loader {
         width: 44px;
         height: 44px;
         border-radius: 9999px;
-        background: @linear-gradient(animation-tick() / 1.25s * 360deg, Palette.peach.with-alpha(0.2) 33%, Palette.peach 100%);
+        background: @linear-gradient(animation-tick() / 1.25s * 360deg, State.main-color.with-alpha(0.2) 33%, State.main-color 100%);
     }
 
     Rectangle {
@@ -490,6 +623,16 @@ export component App inherits Window {
                 bat_threshold_monitor: monitor.bat-threshold;
             }
         }
+
+        if tab_state == 3: VerticalBox {
+            vertical-stretch: 1.0;
+            alignment: start;
+            Header {
+                text: "Settings";
+            }
+
+            Settings { }
+        }
         HorizontalBox {
             vertical-stretch: 0.0;
             height: 32px;
@@ -508,7 +651,7 @@ export component App inherits Window {
                     colorize: Palette.surface2;
                     states [
                         active when tab_state == i: {
-                            colorize: Palette.peach;
+                            colorize: State.main-color;
                             opacity: 1;
                             out {
                                 animate colorize, opacity {
@@ -524,7 +667,7 @@ export component App inherits Window {
                             }
                         }
                         hovered when area.has-hover: {
-                            colorize: Palette.peach;
+                            colorize: State.main-color;
                             opacity: 0.5;
                             out {
                                 animate colorize, opacity {
@@ -554,7 +697,7 @@ export component App inherits Window {
 
                     states [
                         active when tab_state == i: {
-                            background: Palette.peach;
+                            background: State.main-color;
                             opacity: 1;
                             out {
                                 animate background, opacity {
@@ -570,7 +713,7 @@ export component App inherits Window {
                             }
                         }
                         hovered when area.has-hover: {
-                            background: Palette.peach;
+                            background: State.main-color;
                             opacity: 0.5;
                             out {
                                 animate background, opacity {
@@ -601,7 +744,7 @@ export component App inherits Window {
 
                     states [
                         active when tab_state == i: {
-                            background: Palette.peach;
+                            background: State.main-color;
                             opacity: 1;
                             out {
                                 animate background, opacity {
