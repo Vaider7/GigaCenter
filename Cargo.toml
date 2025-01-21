@@ -7,7 +7,6 @@ edition = "2021"
 anstyle = "1.0.10"
 anyhow = "1.0.94"
 async-trait = "0.1.83"
-bincode = "1.3.3"
 clap = { version = "4.5.23", features = ["derive"] }
 enum_dispatch = "0.3.13"
 env_logger = "0.11.6"

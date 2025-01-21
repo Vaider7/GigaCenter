@@ -1,7 +1,12 @@
-use std::time::Duration;
+use std::{
+    fs::{File, OpenOptions},
+    io::{Read, Write},
+    time::Duration,
+};
 
 use anyhow::Result;
-use slint::{ComponentHandle, ToSharedString, Weak};
+use rkyv::{rancor::Error as RkyvError, Archive, Deserialize, Serialize};
+use slint::{Brush, Color, ComponentHandle, ToSharedString, Weak};
 use tokio::sync::Mutex;
 
 use crate::{
@@ -35,10 +40,22 @@ impl From<FanMode> for fan_speed::FanMode {
     }
 }
 
+#[derive(Debug, Clone, Copy, Archive, Serialize, Deserialize)]
+struct Config {
+    color: u32,
+}
+
 pub async fn gui() -> Result<()> {
     let app = App::new()?;
     let daemon: &'static Mutex<DaemonClient> =
         Box::leak(Box::new(Mutex::new(DaemonClient::connect().await?)));
+    let saved_config = get_config();
+    if let Ok(config) = saved_config {
+        let color = Color::from_argb_encoded(config.color);
+        let brush = Brush::from(color);
+        let app_config = AppConfig { color: brush };
+        app.global::<State<'_>>().set_config(app_config);
+    }
 
     let cloned_app = app.as_weak();
     _ = tokio::spawn(async move {
@@ -128,6 +145,11 @@ pub async fn gui() -> Result<()> {
             });
         }
     });
+    app.global::<State<'_>>().on_save_config(|app_config| {
+        let color = app_config.color.color().as_argb_encoded();
+        let to_save = Config { color };
+        _ = save_config(&to_save);
+    });
     Ok(app.run()?)
 }
 
@@ -143,4 +165,35 @@ fn block_user_input(weak: Weak<App>) {
             app.global::<State<'_>>().set_blocked(false);
         })
     });
+}
+
+fn get_config() -> Result<Config> {
+    let mut file = get_config_file()?;
+    let mut content = vec![];
+    _ = file.read_to_end(&mut content)?;
+
+    let response = rkyv::access::<ArchivedConfig, RkyvError>(&content)?;
+    let response = rkyv::deserialize::<_, RkyvError>(response)?;
+    Ok(response)
+}
+
+#[expect(clippy::trivially_copy_pass_by_ref)]
+fn save_config(config: &Config) -> Result<()> {
+    let bytes = rkyv::to_bytes::<RkyvError>(config).unwrap();
+    let mut file = get_config_file()?;
+    file.write_all(&bytes)?;
+    Ok(())
+}
+
+fn get_config_file() -> Result<File> {
+    let home_dir = std::env::var("HOME")?;
+    let path = home_dir + "/.config/.gigalinux";
+
+    let file = OpenOptions::new()
+        .read(true)
+        .write(true)
+        .create(true)
+        .truncate(false)
+        .open(path)?;
+    Ok(file)
 }
