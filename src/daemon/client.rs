@@ -1,14 +1,14 @@
-use anyhow::{Context, Result, bail};
+use anyhow::{bail, Context, Result};
 use futures::{SinkExt as _, StreamExt};
 use tokio::net::UnixStream;
 
 use crate::{
-    RWData,
     traits::{ECHandler, ReadEC, WriteResult},
+    RWData,
 };
 
 use super::{
-    codec::{DaemonReq, DaemonResp, FramedClient, bind_transport_client},
+    codec::{bind_transport_client, DaemonReq, DaemonResp, FramedClient},
     server::DAEMON_UDS_PATH,
 };
 

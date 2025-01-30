@@ -1,13 +1,13 @@
 use std::{io::ErrorKind, marker::PhantomData};
 
-use rkyv::{Archive, Deserialize, Serialize, rancor::Error as RkyvError};
+use rkyv::{rancor::Error as RkyvError, Archive, Deserialize, Serialize};
 use tokio::net::UnixStream;
 use tokio_util::{
     bytes::Buf as _,
     codec::{Decoder, Encoder, Framed},
 };
 
-use crate::{RWData, bat::BatThreshold, fan_speed::FanMode, traits::WriteResult};
+use crate::{bat::BatThreshold, fan_speed::FanMode, traits::WriteResult, RWData};
 
 #[derive(Debug, Archive, Serialize, Deserialize)]
 pub enum DaemonReq {
@@ -29,17 +29,23 @@ pub type FramedServer = Framed<UnixStream, DaemonCodec<RoleServer>>;
 pub fn bind_transport_client(
     unix_socket: UnixStream,
 ) -> Framed<UnixStream, DaemonCodec<RoleClient>> {
-    Framed::new(unix_socket, DaemonCodec {
-        _phantom: PhantomData,
-    })
+    Framed::new(
+        unix_socket,
+        DaemonCodec {
+            _phantom: PhantomData,
+        },
+    )
 }
 
 pub fn bind_transport_server(
     unix_socket: UnixStream,
 ) -> Framed<UnixStream, DaemonCodec<RoleServer>> {
-    Framed::new(unix_socket, DaemonCodec {
-        _phantom: PhantomData,
-    })
+    Framed::new(
+        unix_socket,
+        DaemonCodec {
+            _phantom: PhantomData,
+        },
+    )
 }
 
 #[derive(Debug)]

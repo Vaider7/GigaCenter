@@ -1,4 +1,4 @@
-use clap::{Arg, ArgAction, ArgGroup, Command, ValueEnum, value_parser};
+use clap::{value_parser, Arg, ArgAction, ArgGroup, Command, ValueEnum};
 
 use crate::fan_speed::FanMode;
 

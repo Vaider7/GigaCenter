@@ -192,7 +192,7 @@ fn save_config(config: &Config) -> Result<()> {
 
 fn get_config_file() -> Result<File> {
     let home_dir = std::env::var("HOME")?;
-    let path = home_dir + "/.config/.gigalinux";
+    let path = home_dir + "/.config/.gigacenter";
 
     let file = OpenOptions::new()
         .read(true)

@@ -22,13 +22,13 @@ mod ui;
 
 use std::process::{Command, Stdio};
 
-use anyhow::{Context, Result, bail};
+use anyhow::{bail, Context, Result};
 use bat::BatThreshold;
-use cli::{DaemonCommands, cli};
-use common::{EXIT_MSG, Handler};
+use cli::{cli, DaemonCommands};
+use common::{Handler, EXIT_MSG};
 use daemon::server::start_daemon;
 use ec::*;
-use env_logger::{Env, init_from_env};
+use env_logger::{init_from_env, Env};
 use fan_speed::FanMode;
 use libc::geteuid;
 use log::{debug, info, warn};
@@ -72,7 +72,7 @@ async fn main() -> Result<()> {
                 #[cfg(not(feature = "self-packed"))]
                 {
                     log::error!(
-                        "Build gigalinux with self-packed feature to use `--daemon install` command"
+                        "Build gigacenter with self-packed feature to use `--daemon install` command"
                     );
                     std::process::exit(1);
                 }
@@ -83,7 +83,7 @@ async fn main() -> Result<()> {
                 #[cfg(not(feature = "self-packed"))]
                 {
                     log::error!(
-                        "Build gigalinux with self-packed feature to use `--daemon install` command"
+                        "Build gigacenter with self-packed feature to use `--daemon install` command"
                     );
                     std::process::exit(1);
                 }

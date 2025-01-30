@@ -1,5 +1,5 @@
-use crate::{EmbeddedController, daemon::client::DaemonClient};
-use anyhow::{Result, bail};
+use crate::{daemon::client::DaemonClient, EmbeddedController};
+use anyhow::{bail, Result};
 use enum_dispatch::enum_dispatch;
 
 /// Adapter like type which connect to daemon if available or write to EC by itself

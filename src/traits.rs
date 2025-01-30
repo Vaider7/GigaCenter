@@ -1,8 +1,8 @@
 use crate::{
-    RWData,
     common::Handler,
     daemon::{client::DaemonClient, codec::DaemonReq},
     ec::EmbeddedController,
+    RWData,
 };
 use anyhow::Result;
 use enum_dispatch::enum_dispatch;
