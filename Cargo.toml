@@ -40,3 +40,10 @@ unused_results = "deny"
 
 [lints.rustdoc]
 broken_intra_doc_links = "forbid"
+
+# performance doesn't matter, optimizations for size
+[profile.release]
+strip = true
+opt-level = "z"
+lto = true
+codegen-units = 1
