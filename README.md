@@ -1,6 +1,8 @@
 # GigaCenter
 Monitor system info, control fan mode, and battery threshold of your Gigabyte laptop on Linux
 
+![image](https://github.com/user-attachments/assets/82c2bba6-bcc3-4273-ba7d-bf4d1a6ab1c3)
+
 ## ⚠️Disclaimer
 **This project is not affiliated with Gigabyte (or Aorus) in any way**
 
