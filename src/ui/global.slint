@@ -1,0 +1,67 @@
+enum FanMode {
+    Normal,
+    Eco,
+    Power,
+    Turbo,
+    Unsupported,
+}
+
+struct Monitor {
+    fan_mode: FanMode,
+    cpu_fan_speed: int,
+    gpu_fan_speed: int,
+    cpu_temp: int,
+    gpu_temp: int,
+    bat_threshold: int,
+}
+
+struct AppConfig {
+    color: brush,
+}
+
+global Palette {
+    out property <brush> rosewater: #f4dbd6;
+    out property <brush> flamingo: #f0c6c6;
+    out property <brush> pink: #f5bde6;
+    out property <brush> mauve: #c6a0f6;
+    out property <brush> red: #ed8796;
+    out property <brush> maroon: #ee99a0;
+    out property <brush> peach: #f5a97f;
+    out property <brush> yellow: #eed49f;
+    out property <brush> green: #a6da95;
+    out property <brush> teal: #8bd5ca;
+    out property <brush> sky: #91d7e3;
+    out property <brush> sapphire: #7dc4e4;
+    out property <brush> blue: #8aadf4;
+    out property <brush> lavender: #b7bdf8;
+    out property <brush> text: #cad3f5;
+    out property <brush> subtext1: #b8c0e0;
+    out property <brush> subtext0: #a5adcb;
+    out property <brush> overlay2: #939ab7;
+    out property <brush> overlay1: #8087a2;
+    out property <brush> overlay0: #6e738d;
+    out property <brush> surface2: #5b6078;
+    out property <brush> surface1: #494d64;
+    out property <brush> surface0: #363a4f;
+    out property <brush> base: #24273a;
+    out property <brush> mantle: #1e2030;
+    out property <brush> crust: #181926;
+}
+
+global State {
+    in property <bool> show-loader;
+    in-out property <string> threshold-value;
+    in property <bool> blocked;
+
+    in-out property <AppConfig> config: {
+        color: Palette.peach,
+    };
+
+    callback threshold-change(string, KeyEvent);
+    callback fan-mode-change(FanMode);
+    callback do-backspace(string) -> string; // Ugly hack cause slint can't manipulate strings for now
+    callback set-threshold(string);
+    callback save-config(AppConfig);
+}
+
+export { FanMode, Monitor, AppConfig, Palette, State }

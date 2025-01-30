@@ -1,0 +1,228 @@
+import { BaseText } from "./shared.slint";
+import { State, Palette } from "./global.slint";
+
+component ColorPicker {
+    in property <brush> color;
+    in property <bool> not-selectable: false;
+    Rectangle {
+        border-radius: 9999px;
+        background: color;
+        width: 16px;
+        height: 16px;
+
+        VerticalLayout {
+            alignment: center;
+            HorizontalLayout {
+                alignment: center;
+                Rectangle {
+                    opacity: 0;
+                    border-radius: 9999px;
+                    background: color.darker(0.4);
+                    width: 6px;
+                    height: 6px;
+                    states [
+                        picked when color == State.config.color && !not-selectable: {
+                            opacity: 1.0;
+                        }
+                    ]
+                }
+            }
+        }
+
+        TouchArea {
+            mouse-cursor: not-selectable ? default : pointer;
+            clicked => {
+                State.config.color = color;
+                State.save-config(State.config);
+            }
+        }
+    }
+}
+
+component Settings {
+    property <physical-length> color-spacing: 20px;
+    property <bool> show-colors;
+    fade_timer := Timer {
+        interval: 150ms;
+        running: false;
+        triggered => {
+            color_popup.visible = false;
+            self.running = false;
+        }
+    }
+
+    TouchArea {
+        clicked => {
+            if (show-colors) {
+                show-colors = false;
+                fade_timer.running = true;
+            }
+        }
+    }
+
+    color_popup := Rectangle {
+        TouchArea { }
+
+        x: 80px;
+        y: 15px;
+        width: 190px;
+        height: 60px;
+        opacity: 0;
+        visible: false;
+        border-radius: 8px;
+        background: Palette.mantle;
+        states [
+            animate when show-colors: {
+                opacity: 1;
+                y: 25px;
+                out {
+                    animate opacity, y {
+                        duration: 150ms;
+                        easing: ease-out;
+                    }
+                }
+                in {
+                    animate opacity, y {
+                        duration: 150ms;
+                        easing: ease-out;
+                    }
+                }
+            }
+        ]
+        VerticalLayout {
+            alignment: center;
+            spacing: color-spacing;
+
+            HorizontalLayout {
+                spacing: color-spacing;
+                alignment: center;
+                ColorPicker {
+                    color: Palette.peach;
+                }
+
+                ColorPicker {
+                    color: Palette.sapphire;
+                }
+
+                ColorPicker {
+                    color: Palette.rosewater;
+                }
+
+                ColorPicker {
+                    color: Palette.flamingo;
+                }
+
+                ColorPicker {
+                    color: Palette.pink;
+                }
+
+                ColorPicker {
+                    color: Palette.red;
+                }
+
+                ColorPicker {
+                    color: Palette.teal;
+                }
+            }
+
+            HorizontalLayout {
+                spacing: color-spacing;
+                alignment: center;
+
+                ColorPicker {
+                    color: Palette.blue;
+                }
+
+                ColorPicker {
+                    color: Palette.green;
+                }
+
+                ColorPicker {
+                    color: Palette.lavender;
+                }
+
+                ColorPicker {
+                    color: Palette.mauve;
+                }
+
+                ColorPicker {
+                    color: Palette.maroon;
+                }
+
+                ColorPicker {
+                    color: Palette.yellow;
+                }
+
+                ColorPicker {
+                    color: Palette.sky;
+                }
+            }
+        }
+    }
+
+    VerticalLayout {
+        alignment: start;
+        HorizontalLayout {
+            alignment: space-between;
+            BaseText {
+                vertical-alignment: top;
+                color: Palette.subtext0;
+                text: "Application color";
+            }
+
+            VerticalLayout {
+                alignment: center;
+                HorizontalLayout {
+                    spacing: 16px;
+
+                    ColorPicker {
+                        color: State.config.color;
+                        not-selectable: true;
+                    }
+
+                    Image {
+                        source: @image-url("./assets/svg/angle-down.svg");
+                        width: 16px;
+                        height: 16px;
+                        colorize: Palette.surface2;
+                        states [
+                            show-colors when show-colors: {
+                                rotation-angle: 180deg;
+                                colorize: Palette.text;
+                                out {
+                                    animate rotation-angle, colorize {
+                                        duration: 150ms;
+                                        easing: ease-out;
+                                    }
+                                }
+                                in {
+                                    animate rotation-angle, colorize {
+                                        duration: 150ms;
+                                        easing: ease-out;
+                                    }
+                                }
+                            }
+                        ]
+                        TouchArea {
+                            mouse-cursor: pointer;
+                            clicked => {
+                                // Turn off previous timer
+                                fade_timer.running = false;
+                                // if current is show-colors, then close popup
+                                if (show-colors) {
+                                    fade_timer.running = true;
+                                // else make it visible
+                                } else {
+                                    color_popup.visible = true;
+                                }
+                                show-colors = !show-colors;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+export { Settings }

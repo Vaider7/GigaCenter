@@ -26,32 +26,17 @@ tokio = { version = "1.42.0", features = ["full"] }
 tokio-util = { version = "0.7.13", features = ["codec"] }
 
 [build-dependencies]
-slint-build = "1.9.1"
+slint-build = { version = "1.9.1", optional = true }
 
 [features]
 default = ["self-packed", "gui"]
 self-packed = []
-gui = ["dep:slint"]
+gui = ["dep:slint", "dep:slint-build"]
 
 [lints.rust]
 rust_2018_idioms = { level = "forbid", priority = -1 }
 missing_docs = "deny"
 unused_results = "deny"
-
-[lints.clippy]
-type-complexity = "allow"
-semicolon_if_nothing_returned = "deny"
-trivially-copy-pass-by-ref = "deny"
-default_trait_access = "deny"
-match-wildcard-for-single-variants = "deny"
-redundant-closure-for-method-calls = "deny"
-filter_map_next = "deny"
-manual_let_else = "deny"
-unused_async = "deny"
-from_over_into = "deny"
-needless_borrow = "deny"
-new_without_default = "deny"
-useless_conversion = "deny"
 
 [lints.rustdoc]
 broken_intra_doc_links = "forbid"

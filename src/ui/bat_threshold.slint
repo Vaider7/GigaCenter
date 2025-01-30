@@ -1,0 +1,105 @@
+import { BaseText, BaseButton } from "./shared.slint";
+import { Palette, State } from "./global.slint";
+
+
+export component BatThreshold {
+    out property <string> threshold_val <=> State.threshold-value;
+    in-out property <int> bat_threshold_monitor;
+
+    VerticalLayout {
+        spacing: 8px;
+        HorizontalLayout {
+            alignment: space-between;
+            BaseText {
+                color: Palette.subtext0;
+                text: "Current value:";
+                horizontal-stretch: 0;
+            }
+
+            VerticalLayout {
+                padding: 0;
+                spacing: 2px;
+                alignment: center;
+                bat_threshold_val := TextInput {
+                    width: apply_button.width;
+                    horizontal-stretch: 1.0;
+                    font-size: 16px;
+                    text: threshold_val;
+                    horizontal-alignment: center;
+                    input-type: number;
+                    single-line: true;
+                    read-only: false;
+                    key-pressed(event) => {
+                        if event.text == Key.Return {
+                            if State.blocked {
+                                return EventResult.accept;
+                            }
+                            State.set-threshold(threshold_val);
+                            bat_threshold_monitor = threshold_val.to-float();
+                            return EventResult.accept;
+                        }
+                        if event.text == Key.Backspace {
+                            threshold_val = State.do-backspace(threshold_val);
+                        }
+                        State.threshold-change(threshold_val, event);
+                        EventResult.accept
+                    }
+                }
+
+                VerticalLayout {
+                    spacing: -1px;
+                    Rectangle {
+                        border-width: 1px;
+                        width: bat_threshold_val.width;
+                        height: 1px;
+                        background: Palette.subtext0;
+                    }
+
+                    HorizontalLayout {
+                        alignment: center;
+                        Rectangle {
+                            border-width: 1px;
+                            width: 0;
+                            height: 1px;
+                            background: State.config.color;
+                            opacity: 1.0;
+                            states [
+                                focused when bat_threshold_val.has-focus: {
+                                    width: bat_threshold_val.width;
+                                    opacity: 1.0;
+                                    in {
+                                        animate width {
+                                            duration: 600ms;
+                                            easing: ease-out-quart;
+                                        }
+                                    }
+                                    out {
+                                        animate opacity {
+                                            duration: 150ms;
+                                            easing: ease-out;
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        }
+
+        HorizontalLayout {
+            alignment: end;
+            apply_button := BaseButton {
+                text: "Apply";
+                disabled: threshold_val == bat_threshold_monitor;
+                clicked => {
+                    if State.blocked {
+                        return;
+                    }
+                    State.set-threshold(threshold_val);
+                    bat_threshold_monitor = threshold_val.to-float();
+                }
+            }
+        }
+    }
+}

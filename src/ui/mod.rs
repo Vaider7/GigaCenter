@@ -1,10 +1,12 @@
+slint::include_modules!();
+
 use std::{
     fs::{File, OpenOptions},
     io::{Read, Write},
     time::Duration,
 };
 
-use anyhow::Result;
+use anyhow::{Error, Result};
 use rkyv::{rancor::Error as RkyvError, Archive, Deserialize, Serialize};
 use slint::{Brush, Color, ComponentHandle, ToSharedString, Weak};
 use tokio::sync::Mutex;
@@ -13,8 +15,6 @@ use crate::{
     bat::BatThreshold, daemon::client::DaemonClient, fan_speed, monitor::Monitor as Monitor_,
     traits::ECHandler, WRITE_TIMEOUT_MS,
 };
-
-slint::include_modules!();
 
 impl From<fan_speed::FanMode> for FanMode {
     fn from(value: fan_speed::FanMode) -> Self {
@@ -47,8 +47,13 @@ struct Config {
 
 pub async fn gui() -> Result<()> {
     let app = App::new()?;
-    let daemon: &'static Mutex<DaemonClient> =
-        Box::leak(Box::new(Mutex::new(DaemonClient::connect().await?)));
+    let daemon = DaemonClient::connect().await;
+    let Ok(daemon) = daemon else {
+        app.set_daemon_connected(false);
+        return app.run().map_err(Error::from);
+    };
+
+    let daemon: &'static Mutex<DaemonClient> = Box::leak(Box::new(Mutex::new(daemon)));
     let saved_config = get_config();
     if let Ok(config) = saved_config {
         let color = Color::from_argb_encoded(config.color);

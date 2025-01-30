@@ -1,0 +1,242 @@
+import { Palette, State } from "./global.slint";
+import { HorizontalBox } from "std-widgets.slint";
+
+component BaseText inherits Text {
+    color: Palette.text;
+    font-size: 16px;
+}
+
+component PropValue {
+    in property <string> prop;
+    in property <string> value;
+    HorizontalLayout {
+        alignment: space-between;
+        BaseText {
+            color: Palette.subtext0;
+            text: prop + ":";
+        }
+
+        BaseText {
+            text: value;
+        }
+    }
+}
+
+component Header inherits Text {
+    color: State.config.color;
+    font-size: 20px;
+    font-italic: true;
+    font-weight: 800;
+}
+
+component BaseButton {
+    in property <string> text;
+    in property <bool> disabled: false;
+    callback clicked();
+
+    Rectangle {
+        border-radius: 8px;
+        border-color: State.config.color;
+        background: State.config.color;
+        states [
+            disabled when disabled: {
+                opacity: 0.4;
+                in {
+                    animate opacity {
+                        duration: 200ms;
+                        easing: ease-out;
+                    }
+                }
+                out {
+                    animate opacity {
+                        duration: 200ms;
+                        easing: ease-out;
+                    }
+                }
+            }
+            hover when area.has-hover: {
+                background: State.config.color.darker(0.08);
+                in {
+                    animate background {
+                        duration: 200ms;
+                        easing: ease-out;
+                    }
+                }
+                out {
+                    animate background {
+                        duration: 200ms;
+                        easing: ease-out;
+                    }
+                }
+            }
+        ]
+        VerticalLayout {
+            alignment: center;
+            padding-top: 4px;
+            padding-bottom: 4px;
+            HorizontalLayout {
+                alignment: center;
+                padding-left: 8px;
+                padding-right: 8px;
+                Text {
+                    text: root.text;
+                    font-size: 16px;
+                    color: white;
+                }
+            }
+        }
+
+        area := TouchArea {
+            width: parent.width;
+            height: parent.height;
+            mouse-cursor: pointer;
+            states [
+                disabled when disabled: {
+                    mouse-cursor: not-allowed;
+                }
+            ]
+            clicked => {
+                clicked()
+            }
+        }
+    }
+}
+
+component RadioButton {
+    callback clicked;
+    in property <bool> checked;
+    in property <string> name;
+    area := TouchArea {
+        mouse-cursor: pointer;
+        clicked => {
+            root.clicked();
+        }
+    }
+
+    HorizontalBox {
+        padding: 0;
+        alignment: start;
+        VerticalLayout {
+            padding: 0;
+            alignment: center;
+            outer := Rectangle {
+                width: 18px;
+                height: 18px;
+                border-width: 1px;
+                border-radius: 100px;
+                border-color: Palette.subtext0;
+                states [
+                    uncheked-hover when checked: {
+                        border-color: Palette.text;
+                        out {
+                            animate border-color {
+                                duration: 100ms;
+                                easing: ease-out;
+                            }
+                        }
+                        in {
+                            animate border-color {
+                                duration: 100ms;
+                                easing: ease-out;
+                            }
+                        }
+                    }
+                ]
+                inner := Rectangle {
+                    background: State.config.color;
+                    width: 10px;
+                    height: 10px;
+                    border-radius: 100px;
+                    states [
+                        uncheked-hover when checked: {
+                            opacity: 1.0;
+                            out {
+                                animate opacity {
+                                    duration: 100ms;
+                                    easing: ease-out;
+                                }
+                            }
+                            in {
+                                animate opacity {
+                                    duration: 100ms;
+                                    easing: ease-out;
+                                }
+                            }
+                        }
+                        uncheked-hover when area.has-hover: {
+                            opacity: 0.5;
+                            out {
+                                animate opacity {
+                                    duration: 100ms;
+                                    easing: ease-out;
+                                }
+                            }
+                            in {
+                                animate opacity {
+                                    duration: 100ms;
+                                    easing: ease-out;
+                                }
+                            }
+                        }
+                        unchecked when !root.checked && !area.has-hover: {
+                            opacity: 0.0;
+                            out {
+                                animate opacity {
+                                    duration: 100ms;
+                                    easing: ease-out;
+                                }
+                            }
+                            in {
+                                animate opacity {
+                                    duration: 100ms;
+                                    easing: ease-out;
+                                }
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+
+        BaseText {
+            text: root.name;
+            vertical-alignment: center;
+            color: Palette.subtext0;
+            states [
+                checked when checked: {
+                    color: Palette.text;
+                    out {
+                        animate color {
+                            duration: 100ms;
+                            easing: ease-out;
+                        }
+                    }
+                    in {
+                        animate color {
+                            duration: 100ms;
+                            easing: ease-out;
+                        }
+                    }
+                }
+            ]
+        }
+    }
+}
+
+component Loader {
+    Rectangle {
+        width: 44px;
+        height: 44px;
+        border-radius: 9999px;
+        background: @linear-gradient(animation-tick() / 1.25s * 360deg, State.config.color.with-alpha(0.2) 33%, State.config.color 100%);
+    }
+
+    Rectangle {
+        width: 40px;
+        height: 40px;
+        border-radius: 9999px;
+        background: Palette.base;
+    }
+}
+
+export { PropValue, BaseText, Header, BaseButton, RadioButton, Loader }
