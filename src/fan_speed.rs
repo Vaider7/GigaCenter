@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{fmt::Display, str::FromStr};
 
 use crate::{
     daemon::codec::DaemonReq,
@@ -8,12 +8,9 @@ use crate::{
     BitState, RWData, Reg,
 };
 use anyhow::Result;
-use clap::ValueEnum;
 use rkyv::{Archive, Deserialize, Serialize};
 
-#[derive(
-    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Archive, Serialize, Deserialize,
-)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Archive, Serialize, Deserialize)]
 /// Different fan speeds. Names as they are presented in official Gigabyte Control Center app
 /// TODO: custom fan speed (fixed and curved)
 pub enum FanMode {
@@ -27,13 +24,27 @@ pub enum FanMode {
 impl Display for FanMode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let to_write = match self {
-            FanMode::Normal => "Normal",
-            FanMode::Eco => "Eco",
-            FanMode::Power => "Power",
-            FanMode::Turbo => "Turbo",
-            FanMode::Unsupported => "Unsupported",
+            FanMode::Normal => "normal",
+            FanMode::Eco => "eco",
+            FanMode::Power => "power",
+            FanMode::Turbo => "turbo",
+            FanMode::Unsupported => "unsupported",
         };
         write!(f, "{to_write}")
+    }
+}
+
+impl FromStr for FanMode {
+    type Err = &'static str;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        match s {
+            "normal" => Ok(FanMode::Normal),
+            "eco" => Ok(FanMode::Eco),
+            "power" => Ok(FanMode::Power),
+            "turbo" => Ok(FanMode::Turbo),
+            _ => Err("Failed to convert string to FanMode"),
+        }
     }
 }
 

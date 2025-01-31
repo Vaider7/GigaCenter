@@ -3,7 +3,7 @@ Description=GigaCenter daemon
 
 [Service]
 Type=simple
-ExecStart=/usr/local/bin/gigacenter --daemon run
+ExecStart=/usr/local/bin/gigacenter --daemon run --enable-logs
 Restart=on-failure
 RestartSec=3s
 

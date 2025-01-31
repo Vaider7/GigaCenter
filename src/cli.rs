@@ -1,6 +1,9 @@
-use clap::{value_parser, Arg, ArgAction, ArgGroup, Command, ValueEnum};
+#[cfg(feature = "gui")]
+use anyhow::Result;
+#[cfg(feature = "gui")]
+use clap::ArgMatches;
 
-use crate::fan_speed::FanMode;
+use clap::{value_parser, Arg, ArgAction, ArgGroup, Command, ValueEnum};
 
 pub fn cli() -> Command {
     #[allow(unused_mut, reason = "Mutable access with `gui` feature")]
@@ -31,15 +34,19 @@ pub fn cli() -> Command {
                 .short('f')
                 .long("fan-mode")
                 .value_name("FAN_MODE")
-                .help("Set fan speed mode")
-                .value_parser(value_parser!(FanMode)),
+                .action(ArgAction::Set)
+                .num_args(0..=1)
+                .help("Get/Set fan speed mode")
+                .value_parser(["normal", "eco", "power", "turbo"]),
         )
         .arg(
             Arg::new("bat_threshold")
                 .short('b')
                 .long("bat-threshold")
                 .value_name("THRESHOLD")
-                .help("Set battery threshold. Takes values from 60 to 100 (in percent)")
+                .action(ArgAction::Set)
+                .num_args(0..=1)
+                .help("Get/Set battery threshold. Takes values from 60 to 100 (in percent)")
                 .value_parser(value_parser!(u8).range(60..=100)),
         )
         .arg(
@@ -48,6 +55,13 @@ pub fn cli() -> Command {
                 .long("daemon")
                 .value_name("DAEMON_COMMAND")
                 .value_parser(value_parser!(DaemonCommands)),
+        )
+        .arg(
+            Arg::new("logs")
+                .short('l')
+                .long("enable-logs")
+                .help("Enable logs")
+                .action(ArgAction::SetTrue),
         )
         .after_help(
             "NOTE: Currently it's tested for Aorus 16X. For other models, use it at your own risk!",
@@ -116,4 +130,25 @@ pub fn get_styles() -> clap::builder::Styles {
         .placeholder(
             anstyle::Style::new().fg_color(Some(anstyle::Color::Ansi(anstyle::AnsiColor::Cyan))),
         )
+}
+
+#[cfg(feature = "gui")]
+pub fn run_gui_if_no_matches(matches: &ArgMatches) -> Result<()> {
+    use crate::ui::gui;
+    // matches.args_present() just broken for now, so the next code is such a crap
+    // https://github.com/clap-rs/clap/issues/5860
+    if !matches.contains_id("daemon")
+        && !matches.get_flag("show")
+        && !matches.contains_id("fan_mode")
+        && !matches.contains_id("bat_threshold")
+        && !matches.get_flag("logs")
+    {
+        let runtime = tokio::runtime::Builder::new_multi_thread()
+            .enable_all()
+            .worker_threads(2)
+            .build()?;
+        runtime.block_on(async { gui().await })?;
+        std::process::exit(0);
+    }
+    Ok(())
 }
