@@ -20,7 +20,10 @@ mod traits;
 #[cfg(feature = "gui")]
 mod ui;
 
-use std::process::{Command, Stdio};
+use std::{
+    process::{Command, Stdio},
+    str::FromStr,
+};
 
 use anyhow::{bail, Context, Result};
 use bat::BatThreshold;
@@ -34,32 +37,19 @@ use libc::geteuid;
 use log::{debug, info, warn};
 use monitor::Monitor;
 use traits::ECHandler;
-#[cfg(feature = "gui")]
-use ui::gui;
 
 fn main() -> Result<()> {
-    init_from_env(Env::default().filter_or("RUST_LOG", "info"));
     let cli = cli();
     let args = std::env::args().collect::<Vec<_>>();
     let euid = unsafe { geteuid() };
     let matches = cli.get_matches_from(args);
+    if matches.get_flag("logs") {
+        init_from_env(Env::default().filter_or("RUST_LOG", "info"));
+    }
     debug!("Matches ready");
 
-    // matches.args_present() just broken for now, so the next code is such a crap
-    // https://github.com/clap-rs/clap/issues/5860
     #[cfg(feature = "gui")]
-    if matches.index_of("daemon").is_none()
-        && matches.index_of("bat_threshold").is_none()
-        && !matches.get_flag("show")
-        && matches.index_of("fan_mode").is_none()
-    {
-        let runtime = tokio::runtime::Builder::new_multi_thread()
-            .enable_all()
-            .worker_threads(2)
-            .build()?;
-        runtime.block_on(async { gui().await })?;
-        std::process::exit(0);
-    }
+    crate::cli::run_gui_if_no_matches(&matches)?;
 
     if let Some(daemon_cmd) = matches.get_one::<DaemonCommands>("daemon") {
         if euid != 0 {
@@ -113,14 +103,22 @@ fn main() -> Result<()> {
             }
         };
 
-        if let Some(fan_mode) = matches.get_one::<FanMode>("fan_mode") {
-            _ = ec.write_data(fan_mode).await?;
+        if let Some(fan_mode) = matches.get_one::<String>("fan_mode") {
+            // SAFETY: fan_mode from cli guaranteed to be parsed be FanMode struct
+            let fm = FanMode::from_str(fan_mode).unwrap();
+            _ = ec.write_data(&fm).await?;
             info!("Fan mode set to {fan_mode}");
+        } else if matches.contains_id("fan_mode") {
+            let fan_mode = FanMode::current_mode(&mut ec).await?;
+            println!("{fan_mode}");
         }
 
         if let Some(threshold) = matches.get_one::<u8>("bat_threshold") {
             _ = ec.write_data(&BatThreshold::new(*threshold)).await?;
             info!("Battery threshold set to {}", *threshold);
+        } else if matches.contains_id("bat_threshold") {
+            let fan_mode = BatThreshold::current_state(&mut ec).await?;
+            println!("{}", *fan_mode);
         }
         if matches.get_flag("show") {
             let monitor = Monitor::try_new(&mut ec)
