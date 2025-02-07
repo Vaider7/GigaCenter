@@ -49,7 +49,14 @@ fn main() -> Result<()> {
     debug!("Matches ready");
 
     #[cfg(feature = "gui")]
-    crate::cli::run_gui_if_no_matches(&matches)?;
+    if std::env::args().len() == 1 {
+        let runtime = tokio::runtime::Builder::new_multi_thread()
+            .enable_all()
+            .worker_threads(2)
+            .build()?;
+        runtime.block_on(async { crate::ui::gui().await })?;
+        std::process::exit(0);
+    }
 
     if let Some(daemon_cmd) = matches.get_one::<DaemonCommands>("daemon") {
         if euid != 0 {

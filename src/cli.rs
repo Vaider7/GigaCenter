@@ -131,24 +131,3 @@ pub fn get_styles() -> clap::builder::Styles {
             anstyle::Style::new().fg_color(Some(anstyle::Color::Ansi(anstyle::AnsiColor::Cyan))),
         )
 }
-
-#[cfg(feature = "gui")]
-pub fn run_gui_if_no_matches(matches: &ArgMatches) -> Result<()> {
-    use crate::ui::gui;
-    // matches.args_present() just broken for now, so the next code is such a crap
-    // https://github.com/clap-rs/clap/issues/5860
-    if !matches.contains_id("daemon")
-        && !matches.get_flag("show")
-        && !matches.contains_id("fan_mode")
-        && !matches.contains_id("bat_threshold")
-        && !matches.get_flag("logs")
-    {
-        let runtime = tokio::runtime::Builder::new_multi_thread()
-            .enable_all()
-            .worker_threads(2)
-            .build()?;
-        runtime.block_on(async { gui().await })?;
-        std::process::exit(0);
-    }
-    Ok(())
-}
